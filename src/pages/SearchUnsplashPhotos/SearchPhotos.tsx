@@ -1,25 +1,15 @@
-import React, { FC, useState } from "react";
-
-import { useFetchPhotos } from "./hooks/useFetchPhotos.ts";
-import { Button } from "../../components/Button.tsx";
+import { FC, useState } from "react";
 import { Loader } from "../../components/Loader.tsx";
-import { LoadingError } from "../../components/Notification.tsx";
-import { Select } from "../../components/Select.tsx";
+import {
+  EmptySearchTerm,
+  LoadingError,
+  NotFoundError,
+} from "../../components/Notification.tsx";
+import { useFetchPhotos } from "./hooks/useFetchPhotos.ts";
+import { SearchForm } from "./components/SearchForm.tsx";
+import { SearchFilters } from "./components/SearchFilters.tsx";
+import { SearchResults } from "./components/SearchResults.tsx";
 import { Pagination } from "./components/Pagination.tsx";
-
-const UNSPLASH_COLORS = [
-  "black_and_white",
-  "black",
-  "white",
-  "yellow",
-  "orange",
-  "red",
-  "purple",
-  "magenta",
-  "green",
-  "teal",
-  "blue",
-];
 
 export const SearchPhotos: FC = () => {
   const [page, setPage] = useState(1);
@@ -27,97 +17,33 @@ export const SearchPhotos: FC = () => {
   const [sort, setSort] = useState("relevant");
   const [searchTerm, setSearchTerm] = useState("");
   const { data, error, isLoading, isError } = useFetchPhotos({
-    searchTerm: "dog",
+    searchTerm,
     page,
     color,
     sort,
   });
-
-  const handleSearch = React.useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
-      const form = event.target as HTMLFormElement;
-      setSearchTerm(form.search.value);
-    },
-    [setSearchTerm],
-  );
-
-  console.log(data, error, isLoading, isError);
 
   return (
     <div className="p-4">
       <h1 className="text-3xl font-bold underline mb-4 text-center">
         Unsplash Search
       </h1>
-      <form onSubmit={handleSearch} className="mb-4 flex justify-center">
-        <input
-          required
-          type="text"
-          name="search"
-          defaultValue={searchTerm}
-          className="border p-2 rounded-lg shadow-lg w-1/2"
+      <div className="mb-6">
+        <SearchForm searchTermHook={[searchTerm, setSearchTerm]} />
+        <SearchFilters
+          colorHook={[color, setColor]}
+          sortHook={[sort, setSort]}
         />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white p-2 ml-2 rounded-lg shadow-lg"
-        >
-          Search
-        </button>
-      </form>
-      <div className="mb-4 flex justify-center space-x-6">
-        <label className="flex items-center">
-          <Select
-            name="color"
-            label="Color"
-            value={color}
-            onChange={setColor}
-            options={["Any", ...UNSPLASH_COLORS]}
-          />
-        </label>
-        <label className="flex items-center">
-          <Select
-            name="sort"
-            label="Sort by"
-            value={sort}
-            onChange={setSort}
-            options={["relevant", "latest"]}
-          />
-        </label>
       </div>
-      <>
-        testing my components
-        <Button
-          onClick={() => {
-            console.log("clicked");
-          }}
-          disabled={false}
-        >
-          Click me
-        </Button>
-        <Loader />
-        <LoadingError message="This is a notification" />
-        <Select
-          options={["red", "green", "blue"]}
-          name="color"
-          label="Color"
-          value="green"
-          onChange={(e) => console.log(e.target.value)}
-        />
-        {data &&
-          data.data.results.map((photo) => (
-            <div className="break-inside p-2 border rounded-lg shadow-lg">
-              <img
-                src={photo.urls.small}
-                alt={photo.description}
-                className="w-full h-auto rounded-lg"
-              />
-            </div>
-          ))}
-        <Pagination
-          results={data?.data.results ?? []}
-          pageHook={[page, setPage]}
-        />
-      </>
+      {!searchTerm && <EmptySearchTerm />}
+      {isLoading && <Loader />}
+      {isError && <LoadingError message={error.message} />}
+      {data?.data.results.length === 0 && <NotFoundError />}
+      {data && <SearchResults photos={data?.data.results} />}
+      <Pagination
+        results={data?.data.results ?? []}
+        pageHook={[page, setPage]}
+      />
     </div>
   );
 };

@@ -10,4 +10,6 @@ test("Unsplash search functionality", async ({ page }) => {
   //click select and choose green  and check if green is selected
   await expect(colorSelect).toBeVisible();
   await expect(colorSelect).toHaveValue("green");
+
+  //
 });
